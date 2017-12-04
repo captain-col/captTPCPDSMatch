@@ -1,0 +1,19 @@
+package captTPCPDSMatch
+
+use captEvent
+use captTrans
+use ROOT * LCG_Interfaces
+
+
+
+macro workarea_linkopts " -L$(CAPTTPCPDSMATCH)/$(workarea_tag) "
+
+path_remove LD_LIBRARY_PATH "$(CAPTTPCPDSMATCHROOT)"
+path_prepend LD_LIBRARY_PATH "$(CAPTTPCPDSMATCHROOT)/$(captTPCPDSMatch_tag)"
+
+path_remove PATH "$(CAPTTPCPDSMATCHROOT)"
+path_prepend PATH "$(CAPTTPCPDSMATCHROOT)/$(captTPCPDSMatch_tag)"
+
+application matchPDSTPC ../app/match.cxx
+
+
