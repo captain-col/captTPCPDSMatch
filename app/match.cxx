@@ -4,6 +4,9 @@
 #include <eventLoop.hxx>
 #include <TReconTrack.hxx>
 #include <TReconHit.hxx>
+#include <TDataVector.hxx>
+#include <TRealDatum.hxx>
+
 
 // Includes for ROOT classes
 
@@ -56,14 +59,13 @@ public:
       if(line[0]=='#')continue;
     
       std::stringstream(line) >> eventN >> sec >> nano >> rf1 >> rf2 >> rf3 >> digitRF1 >> digitRF2 >> digitRF3 >> tprompt >> tof ;
-      if(tof < 0) continue;
+      // if(tof < 0) continue;
       fPmtSec.push_back(sec);
       fPmtNano.push_back(nano);
+      fTof.push_back(tof);
 }    myfile.close();
 }
       }
-
-      std::cout<<"pmtSize="<<fPmtSec.size()<<std::endl;
 
       fTimeDiff = new TH1F("TimeDiff","TimeDiff",1000000,0,1000000);
    
@@ -103,16 +105,17 @@ public:
 	 CP::THandle<CP::TDataVector> pmtData = event.Get<CP::TDataVector>("pmtData"); 
 	 CP::TEventContext pmtEv(22,22,22,22,ns,se);
 	 std::unique_ptr<CP::TEvent> eventPMT(new CP::TEvent(pmtEv));
+	 if(!eventPMT->FindDatum("TOF")){
+	   eventPMT->AddDatum(new CP::TRealDatum("TOF",fTof[i]));
+	 }
 	 pmtData->AddDatum(eventPMT.release(),name.c_str());
 	 count++;
        }
        
      }
-     std::cout<<count<<std::endl;
       return true;
       }
-    // Called at least once.  If multiple file are open, it will be called
-    // for each one.   Notice there are two forms...
+
     void Finalize(CP::TRootOutput * const output) {
       fTimeDiff->Draw();
       // gPad->Print("TimeDiff.C");
@@ -122,6 +125,7 @@ private:
   
   std::vector<int> fPmtSec;
   std::vector<int> fPmtNano;
+  std::vector<double> fTof;
   TH1F* fTimeDiff;
     
 };
