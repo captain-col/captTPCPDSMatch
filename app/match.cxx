@@ -54,15 +54,20 @@ public:
       long int digitRF1;
       long int digitRF2;
       long int digitRF3;
-      int tprompt;
+      double tprompt;
       double tof;
+      double energy;
+      double trigt;
       if(line[0]=='#')continue;
     
-      std::stringstream(line) >> eventN >> sec >> nano >> rf1 >> rf2 >> rf3 >> digitRF1 >> digitRF2 >> digitRF3 >> tprompt >> tof ;
+      std::stringstream(line) >> eventN >> sec >> nano >> rf1 >> rf2 >> rf3 >> digitRF1 >> digitRF2 >> digitRF3 >> tprompt >> tof >> energy >> trigt ;
       // if(tof < 0) continue;
       fPmtSec.push_back(sec);
       fPmtNano.push_back(nano);
       fTof.push_back(tof);
+      fTfromRF.push_back(tprompt);
+      fEnergy.push_back(energy);
+      fTriggerType.push_back(trigt);
 }    myfile.close();
 }
       }
@@ -105,8 +110,17 @@ public:
 	 CP::THandle<CP::TDataVector> pmtData = event.Get<CP::TDataVector>("pmtData"); 
 	 CP::TEventContext pmtEv(22,22,22,22,ns,se);
 	 std::unique_ptr<CP::TEvent> eventPMT(new CP::TEvent(pmtEv));
-	 if(!eventPMT->FindDatum("TOF")){
-	   eventPMT->AddDatum(new CP::TRealDatum("TOF",fTof[i]));
+	 if(!eventPMT->FindDatum("TOF(ns)")){
+	   eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",fTof[i]));
+	 }
+	 if(!eventPMT->FindDatum("TimeFromFirsRF_ns")){
+	   eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirsRF_ns",fTfromRF[i]));
+	 }
+	 if(!eventPMT->FindDatum("Energy(MeV)")){
+	   eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",fEnergy[i]));
+	 }
+	 if(!eventPMT->FindDatum("TriggerType")){
+	   eventPMT->AddDatum(new CP::TRealDatum("TriggerType",fTriggerType[i]));
 	 }
 	 pmtData->AddDatum(eventPMT.release(),name.c_str());
 	 count++;
@@ -126,6 +140,9 @@ private:
   std::vector<int> fPmtSec;
   std::vector<int> fPmtNano;
   std::vector<double> fTof;
+  std::vector<double> fTfromRF;
+  std::vector<double> fEnergy;
+  std::vector<int> fTriggerType;
   TH1F* fTimeDiff;
     
 };
