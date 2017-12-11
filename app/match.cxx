@@ -98,8 +98,8 @@ public:
 
      int count=0;
      for(std::size_t i=0;i<timePMT.size();++i){
-       long int diff = abs(timePMT[i]-evTimeS);
-       double matchDiff=abs((double)diff/1000000);
+       long int diff = fabs(timePMT[i]-evTimeS);
+       double matchDiff = fabs((double)diff/1000000);
       
        fTimeDiff->Fill(matchDiff);
        if(matchDiff<100){
