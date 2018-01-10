@@ -87,8 +87,7 @@ public:
 
    long int evTimeS = event.GetTimeStamp();
    int evTimeN= event.GetContext().GetNanoseconds();
-   evTimeS += (long int)evTimeN;
-
+  
    std::vector<long int> timePMT ;
 
      for(int i=0;i<fPmtSec.size();++i){
