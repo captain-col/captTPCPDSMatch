@@ -55,12 +55,16 @@ public:
       long int digitRF2;
       long int digitRF3;
       double tprompt;
+      double tpromptToRF;
       double tof;
       double energy;
       double trigt;
+      int nhits;
+      int beamtrig;
+      double deltat;
       if(line[0]=='#')continue;
     
-      std::stringstream(line) >> eventN >> sec >> nano >> rf1 >> rf2 >> rf3 >> digitRF1 >> digitRF2 >> digitRF3 >> tprompt >> tof >> energy >> trigt ;
+      std::stringstream(line) >> eventN >> sec >> nano >> rf1 >> rf2 >> rf3 >> digitRF1 >> digitRF2 >> digitRF3 >> tprompt>> tpromptToRF >> tof >> energy >> trigt >> nhits >> beamtrig >> deltat;
       // if(tof < 0) continue;
       fPmtSec.push_back(sec);
       fPmtNano.push_back(nano);
@@ -68,6 +72,9 @@ public:
       fTfromRF.push_back(tprompt);
       fEnergy.push_back(energy);
       fTriggerType.push_back(trigt);
+      fNHits.push_back(nhits);
+      fBeamTrig.push_back(beamtrig);
+      fDeltaT.push_back(deltat);
 }    myfile.close();
 }
       }
@@ -121,6 +128,15 @@ public:
 	 if(!eventPMT->FindDatum("TriggerType")){
 	   eventPMT->AddDatum(new CP::TRealDatum("TriggerType",fTriggerType[i]));
 	 }
+	 if(!eventPMT->FindDatum("nHits")){
+	   eventPMT->AddDatum(new CP::TRealDatum("nHits",fNHits[i]));
+	 }
+	 if(!eventPMT->FindDatum("BeamTrig")){
+	   eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",fBeamTrig[i]));
+	 }
+	 if(!eventPMT->FindDatum("DeltaT_ns")){
+	   eventPMT->AddDatum(new CP::TRealDatum("DeltaT_ns",fDeltaT[i]));
+	 }
 	 pmtData->AddDatum(eventPMT.release(),name.c_str());
 	 count++;
        }
@@ -142,6 +158,9 @@ private:
   std::vector<double> fTfromRF;
   std::vector<double> fEnergy;
   std::vector<int> fTriggerType;
+  std::vector<int>   fNHits;
+  std::vector<int>  fBeamTrig;
+  std::vector<double> fDeltaT;
   TH1F* fTimeDiff;
     
 };
