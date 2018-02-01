@@ -120,7 +120,7 @@ public:
 	   eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",fTof[i]));
 	 }
 	 if(!eventPMT->FindDatum("TimeFromFirsRF_ns")){
-	   eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirsRF_ns",fTfromRF[i]));
+	   eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",fTfromRF[i]));
 	 }
 	 if(!eventPMT->FindDatum("Energy(MeV)")){
 	   eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",fEnergy[i]));
