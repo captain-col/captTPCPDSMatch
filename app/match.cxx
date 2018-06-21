@@ -212,14 +212,18 @@ public:
 	// a pointer to the hit selection.
     
 	// std::cout<<event.GetContext()<<std::endl;
-	
 
+	static long int evTimeS = 0;
+	
 	if(!event.FindDatum("pmtData"))
 	    event.AddDatum(new CP::TDataVector("pmtData","Data from PDS system"));
 
-	long int evTimeS = event.GetTimeStamp();
+        evTimeS = event.GetTimeStamp();
 	//int evTimeN= event.GetContext().GetNanoseconds();
-  
+	if(!event.FindDatum("TimeForMatching")){
+		    event.AddDatum(new CP::TRealDatum("TimeForMatching",evTimeS));
+		}
+
 	std::vector<long int> timePMT ;
 
 	for(u_int i=0;i<fPmtSec.size();++i){
@@ -227,10 +231,7 @@ public:
 	    timePMT.push_back(t);
 	}
 
-	int count=0;
-	//std::cout<<"t1="<<evTimeS<<std::endl;
-	//evTimeS = evTimeS - 200000000;
-	//std::cout<<"t2="<<evTimeS<<std::endl;
+	int count = 0;
 	
 	for(std::size_t i=0;i<timePMT.size();++i){
 	    long int diff = fabs(timePMT[i]-evTimeS);
