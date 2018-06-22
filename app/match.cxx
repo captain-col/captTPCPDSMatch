@@ -55,7 +55,7 @@ public:
 
 	if (!fROOT) {
 	    CaptLog("Using ASCII files.");
-	    for(int i=0; i<78;++i){
+	    /*	    for(int i=0; i<78;++i){
 		std::stringstream ss;
 		ss << i;
 		std::string str = ss.str();
@@ -99,7 +99,61 @@ public:
 				fDeltaT.push_back(deltat);
 			    }    myfile.close();
 		    }
-	    }
+		    }
+	    */
+
+	    std::string name = "PDS_tAll2.txt";
+	    std::ifstream myfile (name);
+	    std::string line;
+	    if (myfile.is_open())
+	      {
+		while ( getline (myfile,line) )
+		  {
+		    // int eventN;
+		    // int sec;
+		    // int nano;
+		    // int rf1;
+		    // int rf2;
+		    // int rf3;
+		    // long int digitRF1;
+		    // long int digitRF2;
+		    // long int digitRF3;
+		    // double tprompt;
+		    // double tpromptToRF;
+		    // double tof;
+		    // double energy;
+		    // double trigt;
+		    // int nhits;
+		    // int beamtrig;
+		    // double deltat;
+
+		    int Row;
+		    double Time;
+		    int nEvt;
+		    int iEvt;
+		    double deltaT;
+
+		    if(line[0]=='#')continue;
+		    
+		    //std::stringstream(line) >> eventN >> sec >> nano >> rf1 >> rf2 >> rf3 >> digitRF1 >> digitRF2 >> digitRF3 >> tprompt>> tpromptToRF >> tof >> energy >> trigt >> nhits >> beamtrig >> deltat;
+		    std::stringstream(line) >> Row >> Time >> deltaT >> nEvt >> iEvt;	    
+
+		    //std::cout<<line<<std::endl;
+		    // if(tof < 0) continue;
+		    // fEventN.push_back(eventN);
+		    fPmtSec.push_back(Time);
+		    // fPmtNano.push_back(nano);
+		    // fTof.push_back(tof);
+		    // fTfromRF.push_back(tprompt);
+		    // fEnergy.push_back(energy);
+		    // fTriggerType.push_back(trigt);
+		    // fNHits.push_back(nhits);
+		    // fBeamTrig.push_back(beamtrig);
+		    fDeltaT.push_back(deltaT);
+		  }    
+		myfile.close();
+	      }
+	    
 	}
 	
     }
@@ -211,14 +265,13 @@ public:
 	// Get the list of hits from the event.  The handle is essentially
 	// a pointer to the hit selection.
     
-	// std::cout<<event.GetContext()<<std::endl;
+        // std::cout<<event.GetContext()<<std::endl;
 
 	static long int evTimeS = 0;
 	
 	if(!event.FindDatum("pmtData"))
 	    event.AddDatum(new CP::TDataVector("pmtData","Data from PDS system"));
 
-        evTimeS = event.GetTimeStamp();
 	//int evTimeN= event.GetContext().GetNanoseconds();
 	if(!event.FindDatum("TimeForMatching")){
 		    event.AddDatum(new CP::TRealDatum("TimeForMatching",evTimeS));
@@ -227,44 +280,67 @@ public:
 	std::vector<long int> timePMT ;
 
 	for(u_int i=0;i<fPmtSec.size();++i){
-	    long int t = (long int)fPmtSec[i]*1000000000+(long int)fPmtNano[i];
-	    timePMT.push_back(t);
+	// std::cout<<fPmtSec[i]<<std::endl;
+	     long int t = fPmtSec[i]*1000000;
+	     timePMT.push_back(t);
 	}
 
 	int count = 0;
 	
+	//for(std::size_t i=0;i<10;++i){
 	for(std::size_t i=0;i<timePMT.size();++i){
-	    long int diff = fabs(timePMT[i]-evTimeS);
-	    double matchDiff = fabs((double)diff/1000000);
+
+
+	  long int diff = fabs(timePMT[i]-evTimeS);
+	  double matchDiff = fabs(diff);
       
 	    //fTimeDiff->Fill(matchDiff);
 	    
-	    if(matchDiff<100){
+	    if(matchDiff<100000){
 		// std::cout<<fEventN[i]<<" "<<matchDiff<<std::endl;
-		// std::cout<<matchDiff<<std::endl;
+	        // std::cout<<matchDiff<<std::endl;
+	        //std::cout<<"TIME="<<timePMT[i]<<" "<<evTimeS<<" "<<fDeltaT[i]<<std::endl;
 		int ns=timePMT[i] % 1000000000;
 		int se=timePMT[i] / 1000000000;
 		std::string name  = "PDSEvent_"+toString(count);
 		CP::THandle<CP::TDataVector> pmtData = event.Get<CP::TDataVector>("pmtData"); 
 		CP::TEventContext pmtEv(22,22,22,22,ns,se);
 		std::unique_ptr<CP::TEvent> eventPMT(new CP::TEvent(pmtEv));
+		// if(!eventPMT->FindDatum("TOF(ns)")){
+		//     eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",fTof[i]));
+		// }
+		// if(!eventPMT->FindDatum("TimeFromFirsRF_ns")){
+		//     eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",fTfromRF[i]));
+		// }
+		// if(!eventPMT->FindDatum("Energy(MeV)")){
+		//     eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",fEnergy[i]));
+		// }
+		// if(!eventPMT->FindDatum("TriggerType")){
+		//     eventPMT->AddDatum(new CP::TRealDatum("TriggerType",fTriggerType[i]));
+		// }
+		// if(!eventPMT->FindDatum("nHits")){
+		//     eventPMT->AddDatum(new CP::TRealDatum("nHits",fNHits[i]));
+		// }
+		// if(!eventPMT->FindDatum("BeamTrig")){
+		//     eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",fBeamTrig[i]));
+		// }
 		if(!eventPMT->FindDatum("TOF(ns)")){
-		    eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",fTof[i]));
+		  eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",0.));
 		}
 		if(!eventPMT->FindDatum("TimeFromFirsRF_ns")){
-		    eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",fTfromRF[i]));
+		  eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",0.));
 		}
 		if(!eventPMT->FindDatum("Energy(MeV)")){
-		    eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",fEnergy[i]));
+		  eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",0.));
 		}
 		if(!eventPMT->FindDatum("TriggerType")){
-		    eventPMT->AddDatum(new CP::TRealDatum("TriggerType",fTriggerType[i]));
+		  eventPMT->AddDatum(new CP::TRealDatum("TriggerType",0.));
 		}
 		if(!eventPMT->FindDatum("nHits")){
-		    eventPMT->AddDatum(new CP::TRealDatum("nHits",fNHits[i]));
+		  eventPMT->AddDatum(new CP::TRealDatum("nHits",0.));
 		}
 		if(!eventPMT->FindDatum("BeamTrig")){
-		    eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",fBeamTrig[i]));
+		  eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",0.));
 		}
 		if(!eventPMT->FindDatum("DeltaT_ns")){
 		    eventPMT->AddDatum(new CP::TRealDatum("DeltaT_ns",fDeltaT[i]));
@@ -275,6 +351,7 @@ public:
 	    
 	}
 		
+        evTimeS = event.GetTimeStamp()/1000;
 	
 	return true;
     }
@@ -289,7 +366,7 @@ private:
     bool fROOT = false;
     
     std::vector<int> fEventN;
-    std::vector<int> fPmtSec;
+    std::vector<double> fPmtSec;
     std::vector<int> fPmtNano;
     std::vector<double> fTof;
     std::vector<double> fTfromRF;
