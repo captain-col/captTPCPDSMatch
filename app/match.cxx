@@ -165,7 +165,7 @@ public:
 	if (fROOT) {
 	    CaptLog("Using ROOT file.");
 	    TChain *c = new TChain("summaryTree");
-	    c->Add("lowAna-pmtChain-fix4-0-0.root");
+	    c->Add("/project/projectdirs/captain/data/2017/pdsOutput/lowAna-pmtChain-fix5.root");
 	    // TTree *summaryTree = c->GetTree();
 	    // summaryTree->Print();
 
@@ -267,38 +267,34 @@ public:
     
         // std::cout<<event.GetContext()<<std::endl;
 
-	static long int evTimeS = 0;
-	
 	if(!event.FindDatum("pmtData"))
 	    event.AddDatum(new CP::TDataVector("pmtData","Data from PDS system"));
 
-	//int evTimeN= event.GetContext().GetNanoseconds();
+	//long int evTimeS = event.GetTimeStamp();
+	static long int evTimeS = 0;
 	if(!event.FindDatum("TimeForMatching")){
 		    event.AddDatum(new CP::TRealDatum("TimeForMatching",evTimeS));
-		}
+	}
 
 	std::vector<long int> timePMT ;
 
 	for(u_int i=0;i<fPmtSec.size();++i){
-	// std::cout<<fPmtSec[i]<<std::endl;
-	     long int t = fPmtSec[i]*1000000;
-	     timePMT.push_back(t);
+	    long int t = (long int)fPmtSec[i]*1000000000+(long int)fPmtNano[i];
+	    timePMT.push_back(t);
 	}
 
 	int count = 0;
 	
-	//for(std::size_t i=0;i<10;++i){
 	for(std::size_t i=0;i<timePMT.size();++i){
-
-
-	  long int diff = fabs(timePMT[i]-evTimeS);
-	  double matchDiff = fabs(diff);
+	    long int diff = fabs(timePMT[i]-evTimeS);
+	    double matchDiff = fabs((double)diff/1000000);
+ 
       
 	    //fTimeDiff->Fill(matchDiff);
 	    
-	    if(matchDiff<100000){
+	    if(matchDiff<100){
 		// std::cout<<fEventN[i]<<" "<<matchDiff<<std::endl;
-	        // std::cout<<matchDiff<<std::endl;
+		// std::cout<<matchDiff<<std::endl;
 	        //std::cout<<"TIME="<<timePMT[i]<<" "<<evTimeS<<" "<<fDeltaT[i]<<std::endl;
 		int ns=timePMT[i] % 1000000000;
 		int se=timePMT[i] / 1000000000;
@@ -351,7 +347,7 @@ public:
 	    
 	}
 		
-        evTimeS = event.GetTimeStamp()/1000;
+        evTimeS = event.GetTimeStamp();
 	
 	return true;
     }
