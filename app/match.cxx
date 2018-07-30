@@ -302,42 +302,42 @@ public:
 		CP::THandle<CP::TDataVector> pmtData = event.Get<CP::TDataVector>("pmtData"); 
 		CP::TEventContext pmtEv(22,22,22,22,ns,se);
 		std::unique_ptr<CP::TEvent> eventPMT(new CP::TEvent(pmtEv));
-		// if(!eventPMT->FindDatum("TOF(ns)")){
-		//     eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",fTof[i]));
-		// }
-		// if(!eventPMT->FindDatum("TimeFromFirsRF_ns")){
-		//     eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",fTfromRF[i]));
-		// }
-		// if(!eventPMT->FindDatum("Energy(MeV)")){
-		//     eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",fEnergy[i]));
-		// }
-		// if(!eventPMT->FindDatum("TriggerType")){
-		//     eventPMT->AddDatum(new CP::TRealDatum("TriggerType",fTriggerType[i]));
-		// }
-		// if(!eventPMT->FindDatum("nHits")){
-		//     eventPMT->AddDatum(new CP::TRealDatum("nHits",fNHits[i]));
-		// }
-		// if(!eventPMT->FindDatum("BeamTrig")){
-		//     eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",fBeamTrig[i]));
-		// }
 		if(!eventPMT->FindDatum("TOF(ns)")){
-		  eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",0.));
+		    eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",fTof[i]));
 		}
 		if(!eventPMT->FindDatum("TimeFromFirsRF_ns")){
-		  eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",0.));
+		    eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",fTfromRF[i]));
 		}
 		if(!eventPMT->FindDatum("Energy(MeV)")){
-		  eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",0.));
+		    eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",fEnergy[i]));
 		}
 		if(!eventPMT->FindDatum("TriggerType")){
-		  eventPMT->AddDatum(new CP::TRealDatum("TriggerType",0.));
+		    eventPMT->AddDatum(new CP::TRealDatum("TriggerType",fTriggerType[i]));
 		}
 		if(!eventPMT->FindDatum("nHits")){
-		  eventPMT->AddDatum(new CP::TRealDatum("nHits",0.));
+		    eventPMT->AddDatum(new CP::TRealDatum("nHits",fNHits[i]));
 		}
 		if(!eventPMT->FindDatum("BeamTrig")){
-		  eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",0.));
+		    eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",fBeamTrig[i]));
 		}
+		// if(!eventPMT->FindDatum("TOF(ns)")){
+		//   eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",0.));
+		// }
+		// if(!eventPMT->FindDatum("TimeFromFirsRF_ns")){
+		//   eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",0.));
+		// }
+		// if(!eventPMT->FindDatum("Energy(MeV)")){
+		//   eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",0.));
+		// }
+		// if(!eventPMT->FindDatum("TriggerType")){
+		//   eventPMT->AddDatum(new CP::TRealDatum("TriggerType",0.));
+		// }
+		// if(!eventPMT->FindDatum("nHits")){
+		//   eventPMT->AddDatum(new CP::TRealDatum("nHits",0.));
+		// }
+		// if(!eventPMT->FindDatum("BeamTrig")){
+		//   eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",0.));
+		// }
 		if(!eventPMT->FindDatum("DeltaT_ns")){
 		    eventPMT->AddDatum(new CP::TRealDatum("DeltaT_ns",fDeltaT[i]));
 		}
