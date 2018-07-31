@@ -166,6 +166,8 @@ public:
 	    CaptLog("Using ROOT file.");
 	    TChain *c = new TChain("summaryTree");
 	    c->Add("/project/projectdirs/captain/data/2017/pdsOutput/lowAna-pmtChain-fix5.root");
+	    TChain *c2 = new TChain("pmtTree");
+	    c2->Add("/project/projectdirs/captain/data/2017/pdsOutput/lowAna-pmtChain-fix5.root");
 	    // TTree *summaryTree = c->GetTree();
 	    // summaryTree->Print();
 
@@ -182,6 +184,9 @@ public:
 	    TBranchElement *beamtrig    = (TBranchElement*) pmtSummary->FindBranch("beamtrig");
 	    TBranchElement *deltaT      = (TBranchElement*) pmtSummary->FindBranch("deltaT");
 
+	    TBranch *pmtEvent  = (TBranch*) c2->GetBranch("pmtEvent");
+	    TBranchElement *qsum    = (TBranchElement*) pmtEvent->FindBranch("qsum");
+	    TBranchElement *qmax    = (TBranchElement*) pmtEvent->FindBranch("qmax");
 	
 	    int nEntries = compSec->GetEntries();
 
@@ -197,6 +202,8 @@ public:
 	    std::vector<int>   vnhits;
 	    std::vector<int>  vbeamtrig;
 	    std::vector<double> vdeltaT;
+	    std::vector<double> vqsum;
+	    std::vector<double> vqmax;
 	 
 	    for (int iev = 0; iev < nEntries; iev++) {
 		eventPDS -> GetEntry(iev);
@@ -211,8 +218,11 @@ public:
 		beamtrig -> GetEntry(iev);
 		deltaT   -> GetEntry(iev);
 
-	    
 		for (int in=0; in<5000; in++) {
+		    // THIS IS A HACK BECAUSE WE CAN'T USE TTREEREADER
+		    if (ke->GetValue(in,5000,true) == 0) {
+			continue;
+		    }
 		    //std::cout<<in<<" "<<compNano->GetValue(in,5000,true)<<std::endl;
 		    vcompSec.push_back(compSec->GetValue(in,5000,true));
 		    vcompNano.push_back(compNano->GetValue(in,5000,true));
@@ -228,8 +238,28 @@ public:
 		
 		}
 	    }
-    	
 
+
+
+	    
+	    int nEntries2 = qsum->GetEntries();
+	    for (int iev = 0; iev < nEntries2; iev++) {
+		qsum -> GetEntry(iev);
+		qmax -> GetEntry(iev);
+
+		// Sum over all channels
+		double qsumsum = 0.;
+		double qmaxsum = 0.;
+		for (int in=0; in<21; in++) {
+		    qsumsum += qsum->GetValue(in,21,true);
+		    qmaxsum += qmax->GetValue(in,21,true);
+		}
+		vqsum.push_back(qsumsum);
+		vqmax.push_back(qmaxsum);
+	    }
+
+	    //std::cout<<"SIZES="<<vqsum.size()<<" "<<vcompSec.size()<<std::endl;
+	    
 	    CP::TRootInput *infile = new CP::TRootInput(input->GetFilename());
 
 	
@@ -255,6 +285,8 @@ public:
 		    fNHits.push_back(vnhits[i]);
 		    fBeamTrig.push_back(vbeamtrig[i]);
 		    fDeltaT.push_back(vdeltaT[i]);		
+		    fQsum.push_back(vqsum[i]);		
+		    fQmax.push_back(vqmax[i]);		
 		}
 	    }	
 	}   
@@ -320,26 +352,14 @@ public:
 		if(!eventPMT->FindDatum("BeamTrig")){
 		    eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",fBeamTrig[i]));
 		}
-		// if(!eventPMT->FindDatum("TOF(ns)")){
-		//   eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",0.));
-		// }
-		// if(!eventPMT->FindDatum("TimeFromFirsRF_ns")){
-		//   eventPMT->AddDatum(new CP::TRealDatum("TimeFromFirstRF_ns",0.));
-		// }
-		// if(!eventPMT->FindDatum("Energy(MeV)")){
-		//   eventPMT->AddDatum(new CP::TRealDatum("Energy_MeV",0.));
-		// }
-		// if(!eventPMT->FindDatum("TriggerType")){
-		//   eventPMT->AddDatum(new CP::TRealDatum("TriggerType",0.));
-		// }
-		// if(!eventPMT->FindDatum("nHits")){
-		//   eventPMT->AddDatum(new CP::TRealDatum("nHits",0.));
-		// }
-		// if(!eventPMT->FindDatum("BeamTrig")){
-		//   eventPMT->AddDatum(new CP::TRealDatum("BeamTrig",0.));
-		// }
 		if(!eventPMT->FindDatum("DeltaT_ns")){
 		    eventPMT->AddDatum(new CP::TRealDatum("DeltaT_ns",fDeltaT[i]));
+		}
+		if(!eventPMT->FindDatum("qSum")){
+		    eventPMT->AddDatum(new CP::TRealDatum("qSum",fQsum[i]));
+		}
+		if(!eventPMT->FindDatum("qMax")){
+		    eventPMT->AddDatum(new CP::TRealDatum("qMax",fQmax[i]));
 		}
 		pmtData->AddDatum(eventPMT.release(),name.c_str());
 		count++;
@@ -371,6 +391,8 @@ private:
     std::vector<int>   fNHits;
     std::vector<int>  fBeamTrig;
     std::vector<double> fDeltaT;
+    std::vector<double> fQsum;
+    std::vector<double> fQmax;
     TH1F* fTimeDiff;
     
 };
