@@ -172,7 +172,7 @@ public:
 	    // summaryTree->Print();
 
 	    TBranch *pmtSummary  = (TBranch*) c->GetBranch("pmtSummary");
-	    TBranchElement *eventPDS    = (TBranchElement*) pmtSummary->FindBranch("vevent");
+	    TBranchElement *eventPDS    = (TBranchElement*) pmtSummary->FindBranch("ventry");
 	    TBranchElement *compSec     = (TBranchElement*) pmtSummary->FindBranch("vcompSec");
 	    TBranchElement *compNano    = (TBranchElement*) pmtSummary->FindBranch("vcompNano");
 	    TBranchElement *tof         = (TBranchElement*) pmtSummary->FindBranch("tof");
@@ -183,6 +183,9 @@ public:
 	    TBranchElement *nhits       = (TBranchElement*) pmtSummary->FindBranch("nhits");
 	    TBranchElement *beamtrig    = (TBranchElement*) pmtSummary->FindBranch("beamtrig");
 	    TBranchElement *deltaT      = (TBranchElement*) pmtSummary->FindBranch("deltaT");
+	    TBranchElement *rf1         = (TBranchElement*) pmtSummary->FindBranch("vrf1");
+	    TBranchElement *rf2         = (TBranchElement*) pmtSummary->FindBranch("vrf2");
+	    TBranchElement *rf3         = (TBranchElement*) pmtSummary->FindBranch("vrf3");
 
 	    TBranch *pmtEvent  = (TBranch*) c2->GetBranch("pmtEvent");
 	    TBranchElement *qsum    = (TBranchElement*) pmtEvent->FindBranch("qsum");
@@ -217,11 +220,17 @@ public:
 		nhits -> GetEntry(iev);  
 		beamtrig -> GetEntry(iev);
 		deltaT   -> GetEntry(iev);
+		rf1 -> GetEntry(iev);
+		rf2 -> GetEntry(iev);
+		rf3 -> GetEntry(iev);
 
 		for (int in=0; in<5000; in++) {
 		    // THIS IS A HACK BECAUSE WE CAN'T USE TTREEREADER
 		    if (ke->GetValue(in,5000,true) == 0) {
 			continue;
+		    }
+		    if (rf1->GetValue(in,5000,true) == 0 && rf2->GetValue(in,5000,true) == 0 && rf3->GetValue(in,5000,true) == 0) {
+		    	continue;
 		    }
 		    //std::cout<<in<<" "<<compNano->GetValue(in,5000,true)<<std::endl;
 		    vcompSec.push_back(compSec->GetValue(in,5000,true));
@@ -334,6 +343,10 @@ public:
 		CP::THandle<CP::TDataVector> pmtData = event.Get<CP::TDataVector>("pmtData"); 
 		CP::TEventContext pmtEv(22,22,22,22,ns,se);
 		std::unique_ptr<CP::TEvent> eventPMT(new CP::TEvent(pmtEv));
+
+		if(!eventPMT->FindDatum("event")){
+		    eventPMT->AddDatum(new CP::TRealDatum("eventNumber",fEventN[i]));
+		}
 		if(!eventPMT->FindDatum("TOF(ns)")){
 		    eventPMT->AddDatum(new CP::TRealDatum("TOF_ns",fTof[i]));
 		}
