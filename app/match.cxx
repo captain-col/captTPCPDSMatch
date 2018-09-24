@@ -41,19 +41,26 @@ public:
     virtual ~TMySimpleEventLoop() {}
 
     void Usage(void) {
-	std::cout << "    -O useROOT  Use ROOT summary file instead of ASCII files"<< std::endl;
+	std::cout << "    -O useROOT  Use old ROOT summary file."<< std::endl;
+	std::cout << "    -O useASCII  Use ASCII files."<< std::endl;
     }
     
     virtual bool SetOption(std::string option,std::string value="") {
-	if (option == "useROOT")
+	if (option == "useROOT") {
 	    fROOT = true;
+	    fNewROOT = false;
+	}
+	else if (option == "useASCII") {
+	    fNewROOT = false;
+	    fROOT = false;
+	}
 		
 	return true;
     }
 
     void Initialize() {
 
-	if (!fROOT) {
+	if (!fROOT && !fNewROOT) {
 	    CaptLog("Using ASCII files.");
 	    /*	    for(int i=0; i<78;++i){
 		std::stringstream ss;
@@ -298,7 +305,52 @@ public:
 		    fQmax.push_back(vqmax[i]);		
 		}
 	    }	
-	}   
+	}
+
+	else if (fNewROOT) {
+
+	    TChain *pds_chain = new TChain("digitizer1");
+	    pds_chain->Add("PDS_all_LowInten_final.root");
+
+	    long int timeSec = 0;
+	    long int timeNan = 0;
+	    std::vector<int> *RFtime = 0;
+	    std::vector<int> *peakTime = 0;
+	    
+	    pds_chain->SetBranchAddress("computer_secIntoEpoch",&timeSec);
+	    pds_chain->SetBranchAddress("computer_nsIntoSec",&timeNan);
+	    pds_chain->SetBranchAddress("RF_timeStart",&RFtime);
+	    pds_chain->SetBranchAddress("CoincPeakTime",&peakTime);
+
+	    int nEntries = pds_chain->GetEntries();
+	    
+	    for (int iev = 0; iev < nEntries; iev++) {
+		pds_chain->GetEntry(iev);
+
+		fPmtSec.push_back(timeSec);
+		fPmtNano.push_back(timeNan);
+		fEventN.push_back(0);
+		fTof.push_back(0);
+		//fTfromRF.push_back(vtfromRF[i]);
+		fEnergy.push_back(0);
+		fTriggerType.push_back(0);
+		fNHits.push_back(0);
+		fBeamTrig.push_back(0);
+		fDeltaT.push_back(0);		
+		
+		int RF_time = 0;
+		if (RFtime->size()>0) 
+		    RF_time = RFtime->at(0);
+
+		//std::cout<<"RF="<<RF_time<<std::endl;
+		
+		for (int ipk = 0; ipk < peakTime->size(); ipk++)
+		    fTfromRF.push_back(peakTime->at(ipk) - RF_time);
+	    }
+	    
+	}
+	
+	
     }
 
     
@@ -329,14 +381,13 @@ public:
 	for(std::size_t i=0;i<timePMT.size();++i){
 	    long int diff = fabs(timePMT[i]-evTimeS);
 	    double matchDiff = fabs((double)diff/1000000);
- 
-      
+    
 	    //fTimeDiff->Fill(matchDiff);
 	    
 	    if(matchDiff<100){
-		// std::cout<<fEventN[i]<<" "<<matchDiff<<std::endl;
+		std::cout<<fEventN[i]<<" "<<matchDiff<<std::endl;
 		// std::cout<<matchDiff<<std::endl;
-	        //std::cout<<"TIME="<<timePMT[i]<<" "<<evTimeS<<" "<<fDeltaT[i]<<std::endl;
+		std::cout<<"TIME="<<timePMT[i]<<" "<<evTimeS<<" "<<fDeltaT[i]<<std::endl;
 		int ns=timePMT[i] % 1000000000;
 		int se=timePMT[i] / 1000000000;
 		std::string name  = "PDSEvent_"+toString(count);
@@ -368,12 +419,12 @@ public:
 		if(!eventPMT->FindDatum("DeltaT_ns")){
 		    eventPMT->AddDatum(new CP::TRealDatum("DeltaT_ns",fDeltaT[i]));
 		}
-		if(!eventPMT->FindDatum("qSum")){
-		    eventPMT->AddDatum(new CP::TRealDatum("qSum",fQsum[i]));
-		}
-		if(!eventPMT->FindDatum("qMax")){
-		    eventPMT->AddDatum(new CP::TRealDatum("qMax",fQmax[i]));
-		}
+		// if(!eventPMT->FindDatum("qSum")){
+		//     eventPMT->AddDatum(new CP::TRealDatum("qSum",fQsum[i]));
+		// }
+		// if(!eventPMT->FindDatum("qMax")){
+		//     eventPMT->AddDatum(new CP::TRealDatum("qMax",fQmax[i]));
+		// }
 		pmtData->AddDatum(eventPMT.release(),name.c_str());
 		count++;
 	    }
@@ -393,6 +444,7 @@ public:
 private:
 
     bool fROOT = false;
+    bool fNewROOT = true;
     
     std::vector<int> fEventN;
     std::vector<double> fPmtSec;
