@@ -60,6 +60,8 @@ public:
 
     void Initialize() {
 
+	nHits = new TH1F("nHits","",100,0,100);
+	
 	if (!fROOT && !fNewROOT) {
 	    CaptLog("Using ASCII files.");
 	    /*	    for(int i=0; i<78;++i){
@@ -172,9 +174,9 @@ public:
 	if (fROOT) {
 	    CaptLog("Using ROOT file.");
 	    TChain *c = new TChain("summaryTree");
-	    c->Add("/project/projectdirs/captain/data/2017/pdsOutput/lowAna-pmtChain-fix5.root");
+	    c->Add("lowAna-pmtChain-fix5.root");
 	    TChain *c2 = new TChain("pmtTree");
-	    c2->Add("/project/projectdirs/captain/data/2017/pdsOutput/lowAna-pmtChain-fix5.root");
+	    c2->Add("lowAna-pmtChain-fix5.root");
 	    // TTree *summaryTree = c->GetTree();
 	    // summaryTree->Print();
 
@@ -194,9 +196,12 @@ public:
 	    TBranchElement *rf2         = (TBranchElement*) pmtSummary->FindBranch("vrf2");
 	    TBranchElement *rf3         = (TBranchElement*) pmtSummary->FindBranch("vrf3");
 
+
+
 	    TBranch *pmtEvent  = (TBranch*) c2->GetBranch("pmtEvent");
 	    TBranchElement *qsum    = (TBranchElement*) pmtEvent->FindBranch("qsum");
 	    TBranchElement *qmax    = (TBranchElement*) pmtEvent->FindBranch("qmax");
+	    TBranchElement *dtime   = (TBranchElement*) pmtEvent->FindBranch("dtime");
 	
 	    int nEntries = compSec->GetEntries();
 
@@ -251,7 +256,7 @@ public:
 		    vnhits.push_back(nhits->GetValue(in,5000,true));
 		    vbeamtrig.push_back(beamtrig->GetValue(in,5000,true));
 		    vdeltaT.push_back(deltaT->GetValue(in,5000,true));
-		
+		    
 		}
 	    }
 
@@ -262,6 +267,7 @@ public:
 	    for (int iev = 0; iev < nEntries2; iev++) {
 		qsum -> GetEntry(iev);
 		qmax -> GetEntry(iev);
+		dtime -> GetEntry(iev);
 
 		// Sum over all channels
 		double qsumsum = 0.;
@@ -302,7 +308,7 @@ public:
 		    fBeamTrig.push_back(vbeamtrig[i]);
 		    fDeltaT.push_back(vdeltaT[i]);		
 		    fQsum.push_back(vqsum[i]);		
-		    fQmax.push_back(vqmax[i]);		
+		    fQmax.push_back(vqmax[i]);
 		}
 	    }	
 	}
@@ -310,44 +316,61 @@ public:
 	else if (fNewROOT) {
 
 	    TChain *pds_chain = new TChain("digitizer1");
-	    pds_chain->Add("PDS_all_LowInten_final.root");
+	    pds_chain->Add("PDS_all_LowInten_real_final.root");
 
 	    long int timeSec = 0;
 	    long int timeNan = 0;
+	    long int digitizer_time = 0;
+	    long int bclock = 0;
 	    std::vector<int> *RFtime = 0;
 	    std::vector<int> *peakTime = 0;
+	    std::vector<double> *neutronE = 0;
 	    
 	    pds_chain->SetBranchAddress("computer_secIntoEpoch",&timeSec);
 	    pds_chain->SetBranchAddress("computer_nsIntoSec",&timeNan);
+	    pds_chain->SetBranchAddress("digitizer_time",&digitizer_time);
 	    pds_chain->SetBranchAddress("RF_timeStart",&RFtime);
 	    pds_chain->SetBranchAddress("CoincPeakTime",&peakTime);
+	    pds_chain->SetBranchAddress("NeutronEnergy",&neutronE);
+	    pds_chain->SetBranchAddress("bclock",&bclock);
 
 	    int nEntries = pds_chain->GetEntries();
-	    
+	    double clight = 0.299792458;
+	    double GAMMAPEAK=-628.089;
+	    double L=23.2;
+	    //double nmass=939.565;
+
+	    pds_chain->GetEntry(0);
+	    long int prev_digitizer_time = digitizer_time;
 	    for (int iev = 0; iev < nEntries; iev++) {
 		pds_chain->GetEntry(iev);
-
-		fPmtSec.push_back(timeSec);
-		fPmtNano.push_back(timeNan);
+		
 		fEventN.push_back(0);
-		fTof.push_back(0);
-		//fTfromRF.push_back(vtfromRF[i]);
-		fEnergy.push_back(0);
 		fTriggerType.push_back(0);
 		fNHits.push_back(0);
 		fBeamTrig.push_back(0);
-		fDeltaT.push_back(0);		
-		
-		int RF_time = 0;
+
+		int RF_time = 0;		
 		if (RFtime->size()>0) 
 		    RF_time = RFtime->at(0);
-
-		//std::cout<<"RF="<<RF_time<<std::endl;
-		
-		for (int ipk = 0; ipk < peakTime->size(); ipk++)
-		    fTfromRF.push_back(peakTime->at(ipk) - RF_time);
-	    }
 	    
+		if (abs(prev_digitizer_time - digitizer_time ) > 2e7) {
+		    prev_digitizer_time = digitizer_time;
+		}
+
+		for (int ipk = 0; ipk < int(peakTime->size()); ipk++) {
+		    if (RF_time == -1) continue;
+		    double tof = (peakTime->at(ipk) - RF_time)*4.0-GAMMAPEAK+L/clight;
+		    fPmtSec.push_back(int(bclock*1.0e-9));
+		    fPmtNano.push_back((bclock%1000000000));
+		    fTfromRF.push_back((peakTime->at(ipk) - RF_time)*4.0);
+		    fTof.push_back(tof);
+		    fEnergy.push_back(neutronE->at(ipk));
+		    fDeltaT.push_back(8.0*(digitizer_time - prev_digitizer_time) - 4.0*(peakTime->at(ipk) - RF_time) );
+		    fDigiT.push_back(digitizer_time);	    
+
+		}
+	    }	    
 	}
 	
 	
@@ -370,14 +393,14 @@ public:
 	}
 
 	std::vector<long int> timePMT ;
-
+	
 	for(u_int i=0;i<fPmtSec.size();++i){
 	    long int t = (long int)fPmtSec[i]*1000000000+(long int)fPmtNano[i];
 	    timePMT.push_back(t);
 	}
 
 	int count = 0;
-	
+
 	for(std::size_t i=0;i<timePMT.size();++i){
 	    long int diff = fabs(timePMT[i]-evTimeS);
 	    double matchDiff = fabs((double)diff/1000000);
@@ -385,9 +408,10 @@ public:
 	    //fTimeDiff->Fill(matchDiff);
 	    
 	    if(matchDiff<100){
-		std::cout<<fEventN[i]<<" "<<matchDiff<<std::endl;
+		// std::cout<<fEventN[i]<<" "<<matchDiff<<std::endl;
 		// std::cout<<matchDiff<<std::endl;
-		std::cout<<"TIME="<<timePMT[i]<<" "<<evTimeS<<" "<<fDeltaT[i]<<std::endl;
+		// long int digTime = fDigiT[i];
+		// std::cout<<"TIME="<<timePMT[i]<<" "<<evTimeS<<" "<<fDeltaT[i]<<" "<< digTime<<std::endl;
 		int ns=timePMT[i] % 1000000000;
 		int se=timePMT[i] / 1000000000;
 		std::string name  = "PDSEvent_"+toString(count);
@@ -430,15 +454,17 @@ public:
 	    }
 	    
 	}
-		
+	
+	if (count > 100) count = 99;
+	nHits->Fill(count);
         evTimeS = event.GetTimeStamp();
 	
 	return true;
     }
 
     void Finalize(CP::TRootOutput * const output) {
-	// fTimeDiff->Draw();
-	// gPad->Print("TimeDiff.C");
+	nHits->Draw();
+	gPad->Print("nHits.C");
     }
 
 private:
@@ -456,9 +482,11 @@ private:
     std::vector<int>   fNHits;
     std::vector<int>  fBeamTrig;
     std::vector<double> fDeltaT;
+    std::vector<double> fDigiT;
     std::vector<double> fQsum;
     std::vector<double> fQmax;
     TH1F* fTimeDiff;
+    TH1F* nHits;
     
 };
 
