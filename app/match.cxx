@@ -322,9 +322,13 @@ public:
 	    long int timeNan = 0;
 	    long int digitizer_time = 0;
 	    long int bclock = 0;
+	    int event_number_global = 0;
 	    std::vector<int> *RFtime = 0;
 	    std::vector<int> *peakTime = 0;
 	    std::vector<double> *neutronE = 0;
+	    std::vector<double> *hitQ = 0;
+
+	    std::vector<int> *coincNumber = 0;
 	    
 	    pds_chain->SetBranchAddress("computer_secIntoEpoch",&timeSec);
 	    pds_chain->SetBranchAddress("computer_nsIntoSec",&timeNan);
@@ -333,7 +337,10 @@ public:
 	    pds_chain->SetBranchAddress("CoincPeakTime",&peakTime);
 	    pds_chain->SetBranchAddress("NeutronEnergy",&neutronE);
 	    pds_chain->SetBranchAddress("bclock",&bclock);
-
+	    pds_chain->SetBranchAddress("event_number_global",&event_number_global);
+	    pds_chain->SetBranchAddress("CoincCharge",&hitQ);
+	    pds_chain->SetBranchAddress("CoincNumber",&coincNumber);
+	    
 	    int nEntries = pds_chain->GetEntries();
 	    double clight = 0.299792458;
 	    double GAMMAPEAK=-628.089;
@@ -345,7 +352,7 @@ public:
 	    for (int iev = 0; iev < nEntries; iev++) {
 		pds_chain->GetEntry(iev);
 		
-		fEventN.push_back(0);
+		//fEventN.push_back(0);
 		fTriggerType.push_back(0);
 		fNHits.push_back(0);
 		fBeamTrig.push_back(0);
@@ -368,6 +375,10 @@ public:
 		    fEnergy.push_back(neutronE->at(ipk));
 		    fDeltaT.push_back(8.0*(digitizer_time - prev_digitizer_time) - 4.0*(peakTime->at(ipk) - RF_time) );
 		    fDigiT.push_back(digitizer_time);	    
+		    fEventN.push_back(event_number_global);
+		    fHitCharge.push_back(hitQ->at(ipk));
+		    //std::cout<<"CO="<<coincNumber->at(ipk)<<std::endl;
+		    fCoincNumber.push_back(coincNumber->at(ipk));
 
 		}
 	    }	    
@@ -443,6 +454,12 @@ public:
 		if(!eventPMT->FindDatum("DeltaT_ns")){
 		    eventPMT->AddDatum(new CP::TRealDatum("DeltaT_ns",fDeltaT[i]));
 		}
+		if(!eventPMT->FindDatum("HitCharge")){
+		    eventPMT->AddDatum(new CP::TRealDatum("HitCharge",fHitCharge[i]));
+		}
+		if(!eventPMT->FindDatum("CoincNumber")){
+		    eventPMT->AddDatum(new CP::TRealDatum("CoincNumber",fCoincNumber[i]));
+		}
 		// if(!eventPMT->FindDatum("qSum")){
 		//     eventPMT->AddDatum(new CP::TRealDatum("qSum",fQsum[i]));
 		// }
@@ -481,7 +498,9 @@ private:
     std::vector<int> fTriggerType;
     std::vector<int>   fNHits;
     std::vector<int>  fBeamTrig;
+    std::vector<int>  fCoincNumber;
     std::vector<double> fDeltaT;
+    std::vector<double> fHitCharge;
     std::vector<double> fDigiT;
     std::vector<double> fQsum;
     std::vector<double> fQmax;
